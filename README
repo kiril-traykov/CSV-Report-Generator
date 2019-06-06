@@ -1,0 +1,2 @@
+Application takes paths to two JSON files as command line arguments. First is array of Objects(employees) 
+and the second is report definition. Then CSV file is generated based on Object's properties and according to the definiton file.
