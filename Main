@@ -1,0 +1,89 @@
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+
+
+
+public class Main {
+
+    static double calculateScore(Long totalSales,Long salesPeriod,double experienceMultiplier,boolean useExperienceMultiplier){
+
+        if(useExperienceMultiplier){
+            return totalSales / salesPeriod * experienceMultiplier;
+        }
+        return totalSales/salesPeriod;
+    }
+
+    public static void main(String[] args) throws IOException, ParseException {
+
+        String address = args[0];
+        String defAddress = args[1];
+        JSONParser parser = new JSONParser();
+
+        JSONArray employeesInput = (JSONArray) parser.parse(new FileReader(
+                address));
+
+
+        Iterator employeesIterator = employeesInput.iterator();
+
+        JSONObject definition = (JSONObject) parser.parse(new FileReader(defAddress));
+
+        List <Employee> employees = new ArrayList<Employee>();
+
+        Long definedPeriodLimit = (Long) definition.get("periodLimit");
+
+        while(employeesIterator.hasNext()){
+            JSONObject employee = (JSONObject) employeesIterator.next();
+
+            if(definedPeriodLimit >= (Long) employee.get("salesPeriod")){
+                double score = calculateScore((Long) employee.get("totalSales"),(Long)employee.get("salesPeriod"),
+                        (Double)employee.get("experienceMultiplier"),(Boolean)definition.get("useExprienceMultiplier"));
+                employees.add(new Employee((String)employee.get("name"),score));
+            }
+        }
+
+       employees.sort(new SortbyScore());
+
+        File CSV = new File("CSVReport");
+
+        FileWriter writer = new FileWriter(CSV);
+
+        writer.write("Name       , Score");
+
+        int totalEmployeesThatPassTheThreshHold = (int) (employees.size()*((Long)definition.get("topPerformersThreshold") / 100.0));
+
+        int cnt = 0;
+        for(Employee tmp : employees){
+            if(cnt >= totalEmployeesThatPassTheThreshHold){
+                break;
+            }
+            cnt++;
+            writer.write("\n");
+            writer.write(tmp.getName() + " , " + tmp.getScore());
+
+        }
+
+        writer.flush();
+        writer.close();
+
+    }
+
+
+
+}
+
+class SortbyScore implements Comparator<Employee>
+{
+
+    public int compare(Employee a, Employee b)
+    {
+        return (int) (b.getScore() - a.getScore());
+    }
+}
